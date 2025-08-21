@@ -24,7 +24,7 @@ app.post("/files/:fileId", (req, res) => {
   const busboy = Busboy({ headers: req.headers });
   let uploaded = 0;
 
-  const totalSize = parseInt(req.headers["content-length"] || "0", 10);
+  const totalSize = parseInt(req.headers["content-length"] || "0");
   initProgress(fileId, "pending", totalSize);
 
   busboy.on("file", (name, file, info) => {
@@ -53,7 +53,7 @@ app.post("/files/:fileId", (req, res) => {
 });
 
 // SSE Events for progress
-app.get("/files/:fileId/events", (req, res) => {
+app.get("/files/:fileId/progress", (req, res) => {
   const fileId = req.params.fileId;
   res.setHeader("Content-Type", "text/event-stream");
   res.setHeader("Cache-Control", "no-cache");

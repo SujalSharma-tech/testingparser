@@ -24,12 +24,12 @@ function updateProgress(fileId, uploaded) {
   );
 
   // only broadcast if >3s since last or upload done
-  const now = Date.now();
-  const last = lastBroadcast.get(fileId) || 0;
-  if ((now - last >= 3000) || entry.progress === 100) {
+  // const now = Date.now();
+  // const last = lastBroadcast.get(fileId) || 0;
+  // if ((now - last >= 3000) || entry.progress === 100) {
     broadcast(fileId, entry);
     lastBroadcast.set(fileId, now);
-  }
+  // }
 }
 
 function setStatus(fileId, status) {
