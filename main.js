@@ -4,21 +4,20 @@ const path = require("path");
 const Busboy = require("busboy");
 const { v4: uuidv4 } = require("uuid");
 
-const { initProgress, updateProgress, setStatus, getProgress, subscribe, unsubscribe } = require("./uploadProgress");
+const { initProgress, updateProgress, setStatus, getProgress, subscribe, unsubscribe, setFileName } = require("./uploadProgress");
 const parseFileAsync = require("./parserWorker");
 
 const app = express();
 const uploadDir = path.join(__dirname, "uploads");
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir);
 
-// Reserve File ID
+
 app.post("/files/reserve", (req, res) => {
   const fileId = uuidv4();
   initProgress(fileId, "pending", 0);
   res.json({ file_id: fileId });
 });
 
-// Upload with busboy streaming
 app.post("/files/:fileId", (req, res) => {
   const fileId = req.params.fileId;
   const busboy = Busboy({ headers: req.headers });
@@ -29,6 +28,7 @@ app.post("/files/:fileId", (req, res) => {
 
   busboy.on("file", (name, file, info) => {
     const { filename } = info;
+    setFileName(fileId, filename);
     const filePath = path.join(uploadDir, `${fileId}-${filename}`);
     const writeStream = fs.createWriteStream(filePath);
 
@@ -52,7 +52,6 @@ app.post("/files/:fileId", (req, res) => {
   req.pipe(busboy);
 });
 
-// SSE Events for progress
 app.get("/files/:fileId/progress", (req, res) => {
   const fileId = req.params.fileId;
   res.setHeader("Content-Type", "text/event-stream");
@@ -60,7 +59,6 @@ app.get("/files/:fileId/progress", (req, res) => {
   res.setHeader("Connection", "keep-alive");
   res.flushHeaders();
 
-  // Send current state immediately
   const entry = getProgress(fileId);
   if (entry) {
     res.write(`data: ${JSON.stringify(entry)}\n\n`);

@@ -1,6 +1,14 @@
 const progressMap = new Map();
 const subscribers = new Map();
-const lastBroadcast = new Map(); // fileId -> timestamp
+
+function setFileName(fileId, filename) {
+  const entry = progressMap.get(fileId);
+  if (entry) {
+    entry.filename = filename;
+  } else {
+    progressMap.set(fileId, { fileId, filename, uploaded: 0, status: 'uploading', progress: 0 });
+  }
+}
 
 function initProgress(fileId, filename, filesize) {
   progressMap.set(fileId, {
@@ -23,7 +31,6 @@ function updateProgress(fileId, uploaded) {
     100
   );
 
-  // Only broadcast if progress crosses a new 10% boundary or reaches 100%
   if (
     newProgress !== entry.progress &&
     (newProgress % 10 === 0 || newProgress === 100)
@@ -42,7 +49,7 @@ function setStatus(fileId, status) {
   entry.status = status;
   if (status === 'ready') entry.progress = 100;
 
-  broadcast(fileId, entry); // always broadcast status changes immediately
+  broadcast(fileId, entry); 
 }
 
 function getProgress(fileId) {
@@ -72,4 +79,5 @@ module.exports = {
   getProgress,
   subscribe,
   unsubscribe,
+  setFileName
 };
