@@ -17,33 +17,37 @@ function parseFileAsync(fileId) {
 
   setStatus(fileId, "processing");
 
-  let rows = [];
-  let rowCount = 0;
-
   // Get file size for progress calculation
   const stats = fs.statSync(filePath);
   const totalSize = stats.size;
   let processedBytes = 0;
+  let firstRow = true;
+
+  // Stream output as JSON array
+  const outPath = path.join(__dirname, "uploads", `${fileId}-parsed.json`);
+  const outStream = fs.createWriteStream(outPath);
+  outStream.write("[\n");
 
   fs.createReadStream(filePath)
     .pipe(csv())
     .on("data", (data) => {
-      rows.push(data);
-      rowCount++;
       processedBytes += Buffer.byteLength(JSON.stringify(data));
-      // Update progress every 10%
       const progress = Math.floor((processedBytes / totalSize) * 100);
       if (progress % 10 === 0) {
         updateProgress(fileId, processedBytes);
       }
+      // Write each row as JSON, comma separated
+      if (!firstRow) outStream.write(",\n");
+      outStream.write(JSON.stringify(data));
+      firstRow = false;
     })
     .on("end", () => {
-      // Save parsed data to server as JSON
-      const outPath = path.join(__dirname, "uploads", `${fileId}-parsed.json`);
-      fs.writeFileSync(outPath, JSON.stringify(rows, null, 2));
+      outStream.write("\n]\n");
+      outStream.end();
       setStatus(fileId, "ready");
     })
     .on("error", () => {
+      outStream.end();
       setStatus(fileId, "error");
     });
 }
