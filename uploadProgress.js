@@ -18,18 +18,21 @@ function updateProgress(fileId, uploaded) {
   if (!entry) return;
 
   entry.uploaded = uploaded;
-  entry.progress = Math.min(
+  const newProgress = Math.min(
     Math.round((uploaded / entry.filesize) * 100),
     100
   );
 
-  // only broadcast if >3s since last or upload done
-  // const now = Date.now();
-  // const last = lastBroadcast.get(fileId) || 0;
-  // if ((now - last >= 3000) || entry.progress === 100) {
+  // Only broadcast if progress crosses a new 10% boundary or reaches 100%
+  if (
+    newProgress !== entry.progress &&
+    (newProgress % 10 === 0 || newProgress === 100)
+  ) {
+    entry.progress = newProgress;
     broadcast(fileId, entry);
-    // lastBroadcast.set(fileId, now);
-  // }
+  } else {
+    entry.progress = newProgress;
+  }
 }
 
 function setStatus(fileId, status) {
